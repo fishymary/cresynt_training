@@ -6,4 +6,4 @@ This is by Mary
 
 I'm playing around with editing this. 
 
-![](https://github.com/fishymary/cresynt_training/IMG_5758.JPG) 
+![](https://github.com/fishymary/cresynt_training/blob/master/IMG_5758.JPG) 
