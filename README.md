@@ -6,4 +6,4 @@ This is by Mary
 
 I'm playing around with editing this. 
 
-![alt text](http://github.com/fishymary/cresynt_training/IMG_5758.JPG)
+[logo]: http://github.com/fishymary/cresynt_training/IMG_5758.JPG
