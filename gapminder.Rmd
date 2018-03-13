@@ -1,0 +1,15 @@
+---
+title: "dplyr tutorial with Julien"
+author: "Mary K. Donovan"
+date: "3/13/2018"
+output: html_document
+---
+
+```{r, results='hide', message=FALSE, warning=FALSE}
+library(tidyverse)
+```
+
+```{r}
+gapminder <- read_csv('https://raw.githubusercontent.com/jules32/2017-11-30-MBARI/gh-pages/data/gapminder.csv')
+```
+
