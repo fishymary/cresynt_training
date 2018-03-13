@@ -5,23 +5,29 @@ date: "3/13/2018"
 output: html_document
 ---
 
+# Initialize 
 ```{r, results='hide', message=FALSE, warning=FALSE}
 library(tidyverse)
 library(skimr)
-gapminder <- read_csv('https://raw.githubusercontent.com/jules32/2017-11-30-MBARI/gh-pages/data/gapminder.csv')
 ```
 
+# dplyr
+
+## Gapminder
 ```{r}
+gapminder <- read_csv('https://raw.githubusercontent.com/jules32/2017-11-30-MBARI/gh-pages/data/gapminder.csv')
 summary(gapminder)
 skim(gapminder)
 ```
 
+## Filter
 ```{r}
 filter(gapminder, country == "Switzerland" & year == 1952)
 filter(gapminder, country == "Switzerland" , year == 1952) #same answer
 filter(gapminder, country == "Switzerland" & year == 1952 | country == "Afghanistan" & year==1952)
 ```
 
+## Select
 ```{r}
 select(gapminder, country, year, pop)
 select(gapminder, -continent)
@@ -31,8 +37,71 @@ select(gapminder, -continent)
 select(gapminder, -continent) %>% filter(year==2007)
 ```
 
+## Mutate
 ```{r}
 gapminder %>% 
   mutate(gdp = gdpPercap * pop)
+```
+
+## Group by
+```{r}
+m <- gapminder %>% 
+  group_by(country) %>%
+  mutate(gdp = gdpPercap * pop, maxgpd = max(gdp)) %>% 
+  ungroup()
+  
+```
+
+```{r}
+gapminder %>% 
+  group_by(country) %>% 
+  mutate(gdp = gdpPercap * pop) %>% 
+  summarise(mean_gdp = mean(gdp))
+```
+
+## CO2
+```{r, results='hide', message=FALSE, warning=FALSE}
+co2 <- read_csv('https://raw.githubusercontent.com/OHI-Science/data-science-training/master/data/co2.csv')
+skim(co2)
+```
+
+```{r}
+gap07 <- gapminder %>% 
+  filter(year == 2007)
+```
+
+## Join
+```{r}
+gap07.co2 <- left_join(gap07, co2, by='country')
+gap07.co2 <- right_join(gap07, co2, by='country')
+```
+
+# tidyr
+
+## Air passengers
+```{r}
+AirPassengers
+
+# transform to data frame
+AirPassengers.df <- data.frame(matrix(AirPassengers, ncol=frequency(AirPassengers)))
+colnames(AirPassengers.df) <- dimnames(.preformat.ts(AirPassengers))[[2]]
+AirPassengers.df <- cbind(Year=dimnames(.preformat.ts(AirPassengers))[[1]],AirPassengers.df)
+```
+
+```{r}
+AirPassengers.df %>% 
+  gather(month, passengers, -Year)
+```
+
+## Gap minder wide
+```{r}
+gap.wide <- read_csv('https://raw.githubusercontent.com/OHI-Science/data-science-training/master/data/gapminder_wide.csv')
+
+gap.melt <- gap.wide %>% 
+  gather(observation, observ_value, -continent, -country) %>% 
+  separate(observation, into=c('obs_type', 'year'), sep='_', convert=T) %>% 
+  spread(obs_type, observ_value)
+
+
 ```
 
