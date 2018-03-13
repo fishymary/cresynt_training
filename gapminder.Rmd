@@ -7,9 +7,32 @@ output: html_document
 
 ```{r, results='hide', message=FALSE, warning=FALSE}
 library(tidyverse)
+library(skimr)
+gapminder <- read_csv('https://raw.githubusercontent.com/jules32/2017-11-30-MBARI/gh-pages/data/gapminder.csv')
 ```
 
 ```{r}
-gapminder <- read_csv('https://raw.githubusercontent.com/jules32/2017-11-30-MBARI/gh-pages/data/gapminder.csv')
+summary(gapminder)
+skim(gapminder)
+```
+
+```{r}
+filter(gapminder, country == "Switzerland" & year == 1952)
+filter(gapminder, country == "Switzerland" , year == 1952) #same answer
+filter(gapminder, country == "Switzerland" & year == 1952 | country == "Afghanistan" & year==1952)
+```
+
+```{r}
+select(gapminder, country, year, pop)
+select(gapminder, -continent)
+```
+
+```{r}
+select(gapminder, -continent) %>% filter(year==2007)
+```
+
+```{r}
+gapminder %>% 
+  mutate(gdp = gdpPercap * pop)
 ```
 
