@@ -1,0 +1,166 @@
+---
+title: "tidy coral with Jeanette"
+author: "Mary K. Donovan"
+date: "3/13/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Setup
+```{r}
+## libraries
+library(tidyverse)
+library(janitor) # install.packages('janitor')
+library(skimr) # install.packages('skimr')
+library(stringr) # added when we needed it for benthic data
+
+## data filepaths/urls ----
+
+## benthic data
+benthic_url <- 'https://www.nodc.noaa.gov/archive/arc0054/0104255/1.1/data/0-data/cd08/100308OaAla03m.CSV'
+
+## buoy data
+buoy_url <- 'http://www.ndbc.noaa.gov/view_text_file.php?filename=mokh1h2010.txt.gz&dir=data/historical/stdmet/'
+```
+
+## Data
+This is benthic data from a series of CRAMP (Coral Reef Assessment Monitoring Program) data that includes Kaneohe Bay coral survey still images and extracted data (with larger Hawaiian Islands context):
+
+```{r}
+benthic.raw <- read_csv(benthic_url)
+head(benthic.raw)
+```
+*ignoring black values for now
+
+## Wrangle
+Janitor package will clean up the column names
+```{r}
+benthic <- benthic.raw %>% 
+  janitor::clean_names()
+names(benthic)
+```
+
+Some columns aren't useful
+```{r}
+benthic <- benthic %>% 
+  select(id_name, point, x, y, id_date)
+head(benthic)
+```
+
+Date column needs formatting
+```{r}
+benthic <- benthic %>% 
+  mutate(date = stringr::str_remove_all(id_date,"#"))
+skimr::skim(benthic)
+```
+
+Plot
+```{r}
+ggplot(benthic, aes(x=date, fill=id_name)) + geom_bar()
+```
+
+## Buoy data
+
+read in data
+```{r}
+buoy <- readr::read_csv(buoy_url)
+head(buoy)
+```
+Not the correct delim
+
+```{r}
+buoy <- readr::read_table(buoy_url)
+head(buoy)
+```
+Nope still not right (cols missing)
+
+```{r}
+buoy_raw <- readr::read_table2(buoy_url)
+head(buoy_raw)
+buoy <- buoy_raw
+```
+
+### Wrangle
+The buoy data come from the National Buoy Data Center. We are going to use data from the inner Kaneohe Bay buoy (station MOKH1). More details on this station are available here.
+
+There’s 3 things we want to do to these column names:
+1. make the column header a combo of rows 1 and 2
+```{r}
+names(buoy) <- str_c(names(buoy),                  ## current header
+                  buoy %>% filter(`#YY` == "#yr"), ## row1 -- don't say buoy[1,] 
+                  sep = "_")                       ## separate by `_`
+
+## inspect
+names(buoy) ## Looks a lot better
+```
+
+2. clean up the header; get rid of # and /
+```{r}
+names(buoy) <- str_replace_all(names(buoy), "#", "")  # replace `#` with nothing 
+names(buoy) <- str_replace_all(names(buoy), "/", "_") # replace `/` with `_`
+
+## inspect to make sure it worked
+names(buoy)
+```
+
+3. delete the now-redundant row 1
+```{r}
+buoy <- buoy %>%
+  filter(YY_yr != "#yr")
+```
+
+### Plot
+```{r}
+ggplot(buoy, aes(WTMP_degC)) + 
+  geom_bar() +
+  theme(axis.text.x = element_text(angle=90))
+```
+Missing values are set to 999
+```{r}
+buoy$WTMP_degC[buoy$WTMP_degC=='999.0'] <- NA
+summary(as.numeric(buoy$WTMP_degC))
+```
+
+Need to coerce all the columns into integers
+```{r}
+
+```
+
+We want to join the buoy data to the benthic data using the date, so need to format dates
+```{r}
+buoy <- buoy %>%
+  unite(date,c(YY_yr,MM_mo,DD_dy),sep="-")
+head(buoy)
+```
+
+## Join
+
+```{r}
+bb_join <- left_join(benthic,buoy,by='date')
+```
+Didn't work because there are multiple temp records per day
+
+Create a summary of temp
+```{r}
+temp.mean <- buoy %>% 
+  group_by(date) %>% 
+  mutate(WTMP_degC.n = as.numeric(WTMP_degC)) %>% 
+  summarise(meantemp = mean(WTMP_degC.n,na.rm=T)) %>% 
+  ungroup()
+head(temp.mean)
+```
+
+Try to join them again
+```{r}
+bb_join <- left_join(benthic,temp.mean,by='date')
+skimr::skim(bb_join)
+```
+
+Plot
+```{r}
+plot(as.Date(bb_join$date, '%Y-%m-%d'),bb_join$meantemp,type="l")
+```
+
